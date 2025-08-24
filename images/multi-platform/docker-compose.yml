@@ -1,0 +1,73 @@
+version: "3.8"
+
+services:
+  # Multi-platform base image
+  multi-platform-base:
+    build:
+      context: ./base
+      dockerfile: Dockerfile
+    image: unityci/multi-platform-base:dev
+    container_name: unity-multiplatform-base
+
+  # Multi-platform hub image
+  multi-platform-hub:
+    build:
+      context: ./hub
+      dockerfile: Dockerfile
+      args:
+        baseImage: unityci/multi-platform-base:dev
+    image: unityci/multi-platform-hub:dev
+    container_name: unity-multiplatform-hub
+    depends_on:
+      - multi-platform-base
+
+  # Multi-platform editor image
+  multi-platform-editor:
+    build:
+      context: ./editor
+      dockerfile: Dockerfile
+      args:
+        hubImage: unityci/multi-platform-hub:dev
+        baseImage: unityci/multi-platform-base:dev
+        version: "${UNITY_VERSION:-2022.3.0f1}"
+        changeSet: "${UNITY_CHANGESET:-52de8fd3ce}"
+        module: "android-ios-windows"
+    image: unityci/multi-platform-editor:ubuntu-${UNITY_VERSION:-2022.3.0f1}-android-ios-windows-dev
+    container_name: unity-multiplatform-editor
+    depends_on:
+      - multi-platform-hub
+    volumes:
+      - "${PROJECT_PATH:-./project}:/project:ro"
+      - "${BUILD_PATH:-./build}:/build"
+      - "${CACHE_PATH:-./cache}:/cache"
+    environment:
+      - UNITY_PROJECT_PATH=/project
+      - UNITY_BUILD_PATH=/build
+      - UNITY_CACHE_PATH=/cache
+    stdin_open: true
+    tty: true
+
+  # Development container for testing
+  unity-dev:
+    image: unityci/multi-platform-editor:ubuntu-${UNITY_VERSION:-2022.3.0f1}-android-ios-windows-dev
+    container_name: unity-multiplatform-dev
+    depends_on:
+      - multi-platform-editor
+    volumes:
+      - "${PROJECT_PATH:-./project}:/project"
+      - "${BUILD_PATH:-./build}:/build"
+      - "${CACHE_PATH:-./cache}:/cache"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - UNITY_PROJECT_PATH=/project
+      - UNITY_BUILD_PATH=/build
+      - UNITY_CACHE_PATH=/cache
+    stdin_open: true
+    tty: true
+    command: bash
+
+volumes:
+  unity_cache:
+    driver: local
+  unity_builds:
+    driver: local

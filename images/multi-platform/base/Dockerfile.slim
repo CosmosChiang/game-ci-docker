@@ -1,0 +1,93 @@
+ARG ubuntuImage="ubuntu:22.04"
+FROM $ubuntuImage as base-slim
+
+# Essential environment setup
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    DEBIAN_FRONTEND=noninteractive \
+    UNITY_PATH="/opt/unity"
+
+# Minimal dependencies for Unity in single layer (optimized for size)
+RUN apt-get -q update \
+    && apt-get -q install -y --no-install-recommends \
+    # Core dependencies
+    ca-certificates \
+    libasound2 \
+    libc6-dev \
+    libglu1 \
+    libgtk-3-0 \
+    libnss3 \
+    libxtst6 \
+    xvfb \
+    # Essential tools
+    curl \
+    git \
+    jq \
+    wget \
+    zip \
+    unzip \
+    # Build essentials (minimal)
+    build-essential \
+    clang \
+    python3 \
+    # libssl fix for Ubuntu 22.04
+    && wget -q http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb \
+    && dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb \
+    && rm libssl1.1_1.1.1f-1ubuntu2_amd64.deb \
+    # Cleanup
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /usr/share/doc/* \
+    && rm -rf /usr/share/man/* \
+    && rm -rf /usr/share/locale/* \
+    && rm -rf /var/cache/debconf/* \
+    && rm -rf /tmp/*
+
+# Audio and Unity setup
+RUN echo 'pcm.!default {\n    type plug\n    slave.pcm "null"\n}' > /etc/asound.conf \
+    && echo "576562626572264761624c65526f7578" > /etc/machine-id \
+    && mkdir -p /var/lib/dbus/ \
+    && ln -sf /etc/machine-id /var/lib/dbus/machine-id
+
+# Create essential directories
+RUN mkdir -p ${UNITY_PATH} /opt/android-sdk /opt/wine /opt/ios-toolchain
+
+# Multi-stage: Platform-specific extensions
+FROM base-slim as android-extension
+RUN apt-get -q update \
+    && apt-get -q install -y --no-install-recommends openjdk-11-jdk \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM base-slim as windows-extension
+RUN apt-get -q update \
+    && apt-get -q install -y --no-install-recommends wine64 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/.wine-*
+
+FROM base-slim as ios-extension
+RUN apt-get -q update \
+    && apt-get -q install -y --no-install-recommends cmake libxml2-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Final multi-platform image (selectively copies only needed components)
+FROM base-slim as multi-platform-slim
+
+ARG ENABLE_ANDROID="true"
+ARG ENABLE_WINDOWS="true"
+ARG ENABLE_IOS="true"
+
+# Copy platform tools conditionally
+COPY --from=android-extension /usr/lib/jvm/java-11-openjdk-amd64 /usr/lib/jvm/java-11-openjdk-amd64
+COPY --from=windows-extension /usr/bin/wine* /usr/bin/
+COPY --from=windows-extension /usr/lib/wine /usr/lib/wine
+COPY --from=ios-extension /usr/bin/cmake /usr/bin/cmake
+
+# Environment variables
+ENV ANDROID_SDK_ROOT="/opt/android-sdk" \
+    ANDROID_HOME="/opt/android-sdk" \
+    JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64" \
+    WINEPREFIX="/opt/wine" \
+    IOS_TOOLCHAIN_PATH="/opt/ios-toolchain"
