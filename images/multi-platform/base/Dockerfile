@@ -117,7 +117,7 @@ RUN mkdir -p ${UNITY_PATH} \
 
 # Install rbenv, Ruby, and CocoaPods for iOS build support (single layer with cleanup)
 ARG RBENV_VERSION="v1.2.0"
-ARG RUBY_BUILD_VERSION="v20240216"
+ARG RUBY_BUILD_VERSION="v20260317"
 ARG COCOAPODS_VERSION="1.15.2"
 RUN LIBSSL_PREINSTALLED=$(dpkg -s libssl-dev >/dev/null 2>&1 && echo yes || echo no) \
   && apt-get -q update \
