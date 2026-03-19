@@ -134,6 +134,12 @@ RUN apt-get -q update \
   # Remove Ruby build artifacts and gem cache to reduce layer size
   && rm -rf ${RBENV_ROOT}/versions/${RUBY_VERSION}/lib/ruby/gems/*/cache/* \
   && rm -rf /tmp/ruby-build* \
+  && apt-get purge -y --auto-remove \
+  libssl-dev \
+  libreadline-dev \
+  zlib1g-dev \
+  libffi-dev \
+  libyaml-dev \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
