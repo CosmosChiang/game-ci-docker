@@ -70,10 +70,11 @@ USER root
 # Always put "Editor" and "modules.json" directly in $UNITY_PATH
 ARG version
 ARG module
-COPY --from=builder /opt/unity/editors/$version/ "$UNITY_PATH/"
+COPY --chown=unity:unity --from=builder /opt/unity/editors/$version/ "$UNITY_PATH/"
 
 # Add a file containing the version for this build
-RUN echo $version > "$UNITY_PATH/version"
+RUN echo "$version" > "$UNITY_PATH/version" \
+  && chown unity:unity "$UNITY_PATH/version"
 
 ###########################
 #  Alias to unity-editor  #
@@ -303,9 +304,8 @@ RUN /bin/echo -e '#!/bin/bash\n\
   esac' > /usr/bin/unity-multiplatform-build \
   && chmod 755 /usr/bin/unity-multiplatform-build
 
-# Set ownership of Unity path to non-root user and copy shell configuration
-RUN chown -R unity:unity ${UNITY_PATH} \
-  && cp /root/.bashrc /home/unity/.bashrc \
+# Copy shell configuration for the unity user
+RUN cp /root/.bashrc /home/unity/.bashrc \
   && chown unity:unity /home/unity/.bashrc
 
 USER unity

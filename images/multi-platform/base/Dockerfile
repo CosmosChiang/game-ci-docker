@@ -35,7 +35,9 @@ RUN apt-get -q update \
   git \
   git-lfs \
   jq \
+  lftp \
   openssh-client \
+  rsync \
   wget \
   zip \
   unzip \
@@ -88,6 +90,11 @@ RUN echo "576562626572264761624c65526f7578" > /etc/machine-id && mkdir -p /var/l
 # Used by Unity editor in "modules.json" and must not end with a slash.
 ENV UNITY_PATH="/opt/unity"
 
+# rbenv and Ruby environment variables
+ENV RBENV_ROOT="/usr/local/rbenv"
+ENV RUBY_VERSION="4.0.2"
+ENV PATH="${RBENV_ROOT}/bin:${RBENV_ROOT}/shims:${PATH}"
+
 # Environment variables for multi-platform support
 ENV ANDROID_SDK_ROOT="/opt/android-sdk"
 ENV ANDROID_HOME="${ANDROID_SDK_ROOT}"
@@ -107,5 +114,36 @@ RUN mkdir -p ${UNITY_PATH} \
   && mkdir -p ${WINEPREFIX} \
   && mkdir -p ${IOS_TOOLCHAIN_PATH} \
   && chown -R unity:unity ${UNITY_PATH} ${ANDROID_SDK_ROOT} ${JAVA_HOME} ${WINEPREFIX} ${IOS_TOOLCHAIN_PATH}
+
+# Install rbenv, Ruby, and CocoaPods for iOS build support (single layer with cleanup)
+ARG RBENV_VERSION="v1.2.0"
+ARG RUBY_BUILD_VERSION="v20240216"
+ARG COCOAPODS_VERSION="1.15.2"
+RUN LIBSSL_PREINSTALLED=$(dpkg -s libssl-dev >/dev/null 2>&1 && echo yes || echo no) \
+  && apt-get -q update \
+  && apt-get -q install -y --no-install-recommends \
+  libssl-dev \
+  libreadline-dev \
+  zlib1g-dev \
+  libffi-dev \
+  libyaml-dev \
+  && git clone --depth=1 --branch ${RBENV_VERSION} https://github.com/rbenv/rbenv.git ${RBENV_ROOT} \
+  && git clone --depth=1 --branch ${RUBY_BUILD_VERSION} https://github.com/rbenv/ruby-build.git ${RBENV_ROOT}/plugins/ruby-build \
+  && rbenv install ${RUBY_VERSION} \
+  && rbenv global ${RUBY_VERSION} \
+  && rbenv exec gem install cocoapods:${COCOAPODS_VERSION} --no-document \
+  && rbenv rehash \
+  && chmod -R a+rX ${RBENV_ROOT} \
+  # Remove git metadata, Ruby build artifacts and gem cache to reduce layer size
+  && rm -rf ${RBENV_ROOT}/.git \
+  && rm -rf ${RBENV_ROOT}/plugins/ruby-build/.git \
+  && rm -rf ${RBENV_ROOT}/versions/${RUBY_VERSION}/lib/ruby/gems/*/cache/* \
+  && rm -rf /tmp/ruby-build* \
+  # Remove Ruby build-time dependencies to reduce image size and attack surface
+  # Only purge libssl-dev if it was not already present (e.g. installed by iOS tools)
+  && apt-get purge -y --auto-remove libreadline-dev zlib1g-dev libffi-dev libyaml-dev \
+  && if [ "$LIBSSL_PREINSTALLED" = "no" ]; then apt-get purge -y --auto-remove libssl-dev; fi \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 USER unity

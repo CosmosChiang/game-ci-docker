@@ -1,11 +1,20 @@
 ARG ubuntuImage="ubuntu:22.04"
 FROM $ubuntuImage as base-slim
 
+# Version pins for Ruby toolchain components (ensure reproducible builds)
+ARG RBENV_VERSION="v1.2.0"
+ARG RUBY_BUILD_VERSION="v20240216"
+ARG COCOAPODS_VERSION="1.15.2"
+
 # Essential environment setup
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     DEBIAN_FRONTEND=noninteractive \
-    UNITY_PATH="/opt/unity"
+    UNITY_PATH="/opt/unity" \
+    RBENV_ROOT="/usr/local/rbenv" \
+    RUBY_VERSION="4.0.2"
+
+ENV PATH="${RBENV_ROOT}/bin:${RBENV_ROOT}/shims:${PATH}"
 
 # Minimal dependencies for Unity in single layer (optimized for size)
 RUN apt-get -q update \
@@ -23,6 +32,8 @@ RUN apt-get -q update \
     curl \
     git \
     jq \
+    lftp \
+    rsync \
     wget \
     zip \
     unzip \
@@ -54,6 +65,34 @@ RUN groupadd -g 1000 unity \
     && useradd -u 1000 -g unity -m -s /bin/bash unity \
     && mkdir -p ${UNITY_PATH} \
     && chown -R unity:unity ${UNITY_PATH}
+
+# Install rbenv, Ruby, and CocoaPods for iOS build support (single layer with cleanup)
+RUN LIBSSL_PREINSTALLED=$(dpkg -s libssl-dev >/dev/null 2>&1 && echo yes || echo no) \
+    && apt-get -q update \
+    && apt-get -q install -y --no-install-recommends \
+    libssl-dev \
+    libreadline-dev \
+    zlib1g-dev \
+    libffi-dev \
+    libyaml-dev \
+    && git clone --depth=1 --branch "${RBENV_VERSION}" https://github.com/rbenv/rbenv.git ${RBENV_ROOT} \
+    && git clone --depth=1 --branch "${RUBY_BUILD_VERSION}" https://github.com/rbenv/ruby-build.git ${RBENV_ROOT}/plugins/ruby-build \
+    && rbenv install ${RUBY_VERSION} \
+    && rbenv global ${RUBY_VERSION} \
+    && rbenv exec gem install cocoapods:${COCOAPODS_VERSION} --no-document \
+    && rbenv rehash \
+    && chmod -R a+rX ${RBENV_ROOT} \
+    # Remove VCS metadata and Ruby build artifacts to reduce layer size
+    && rm -rf ${RBENV_ROOT}/.git \
+    && rm -rf ${RBENV_ROOT}/plugins/ruby-build/.git \
+    && rm -rf ${RBENV_ROOT}/versions/${RUBY_VERSION}/lib/ruby/gems/*/cache/* \
+    && rm -rf /tmp/ruby-build* \
+    # Remove Ruby build-time dependencies to reduce image size and attack surface
+    # Only purge libssl-dev if it was not already present (e.g. installed by iOS tools)
+    && apt-get purge -y --auto-remove libreadline-dev zlib1g-dev libffi-dev libyaml-dev \
+    && if [ "$LIBSSL_PREINSTALLED" = "no" ]; then apt-get purge -y --auto-remove libssl-dev; fi \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Multi-stage: Platform-specific extensions
 FROM base-slim as android-extension
