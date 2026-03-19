@@ -127,10 +127,10 @@ RUN LIBSSL_PREINSTALLED=$(dpkg -s libssl-dev >/dev/null 2>&1 && echo yes || echo
   zlib1g-dev \
   libffi-dev \
   libyaml-dev \
-  && git -c advice.detachedHead=false clone --depth=1 --branch ${RBENV_VERSION} https://github.com/rbenv/rbenv.git ${RBENV_ROOT} \
-  && git -c advice.detachedHead=false clone --depth=1 --branch ${RUBY_BUILD_VERSION} https://github.com/rbenv/ruby-build.git ${RBENV_ROOT}/plugins/ruby-build \
-  && rbenv install ${RUBY_VERSION} \
-  && rbenv global ${RUBY_VERSION} \
+  && git -c advice.detachedHead=false clone --depth=1 --branch "${RBENV_VERSION}" https://github.com/rbenv/rbenv.git "${RBENV_ROOT}" \
+  && git -c advice.detachedHead=false clone --depth=1 --branch "${RUBY_BUILD_VERSION}" https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins/ruby-build" \
+  && rbenv install "${RUBY_VERSION}" \
+  && rbenv global "${RUBY_VERSION}" \
   && rbenv exec gem install cocoapods:${COCOAPODS_VERSION} --no-document \
   && rbenv rehash \
   && chmod -R a+rX ${RBENV_ROOT} \
