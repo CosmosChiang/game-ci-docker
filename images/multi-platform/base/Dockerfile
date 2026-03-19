@@ -132,7 +132,9 @@ RUN apt-get -q update \
   && rbenv exec gem install cocoapods --no-document \
   && rbenv rehash \
   && chmod -R a+rx ${RBENV_ROOT} \
-  # Remove Ruby build artifacts and gem cache to reduce layer size
+  # Remove git metadata, Ruby build artifacts and gem cache to reduce layer size
+  && rm -rf ${RBENV_ROOT}/.git \
+  && rm -rf ${RBENV_ROOT}/plugins/ruby-build/.git \
   && rm -rf ${RBENV_ROOT}/versions/${RUBY_VERSION}/lib/ruby/gems/*/cache/* \
   && rm -rf /tmp/ruby-build* \
   && apt-get purge -y --auto-remove \
