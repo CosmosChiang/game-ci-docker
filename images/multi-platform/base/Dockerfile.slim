@@ -5,7 +5,11 @@ FROM $ubuntuImage as base-slim
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     DEBIAN_FRONTEND=noninteractive \
-    UNITY_PATH="/opt/unity"
+    UNITY_PATH="/opt/unity" \
+    RBENV_ROOT="/usr/local/rbenv" \
+    RUBY_VERSION="4.0.2"
+
+ENV PATH="${RBENV_ROOT}/bin:${RBENV_ROOT}/shims:${PATH}"
 
 # Minimal dependencies for Unity in single layer (optimized for size)
 RUN apt-get -q update \
@@ -23,6 +27,8 @@ RUN apt-get -q update \
     curl \
     git \
     jq \
+    lftp \
+    rsync \
     wget \
     zip \
     unzip \
@@ -54,6 +60,26 @@ RUN groupadd -g 1000 unity \
     && useradd -u 1000 -g unity -m -s /bin/bash unity \
     && mkdir -p ${UNITY_PATH} \
     && chown -R unity:unity ${UNITY_PATH}
+
+# Install rbenv, Ruby, and CocoaPods for iOS build support (single layer with cleanup)
+RUN apt-get -q update \
+    && apt-get -q install -y --no-install-recommends \
+    libssl-dev \
+    libreadline-dev \
+    zlib1g-dev \
+    libffi-dev \
+    libyaml-dev \
+    && git clone --depth=1 https://github.com/rbenv/rbenv.git ${RBENV_ROOT} \
+    && git clone --depth=1 https://github.com/rbenv/ruby-build.git ${RBENV_ROOT}/plugins/ruby-build \
+    && rbenv install ${RUBY_VERSION} \
+    && rbenv global ${RUBY_VERSION} \
+    && gem install cocoapods --no-document \
+    && chmod -R a+rx ${RBENV_ROOT} \
+    # Remove Ruby build artifacts and gem cache to reduce layer size
+    && rm -rf ${RBENV_ROOT}/versions/${RUBY_VERSION}/lib/ruby/gems/*/cache/* \
+    && rm -rf /tmp/ruby-build* \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Multi-stage: Platform-specific extensions
 FROM base-slim as android-extension

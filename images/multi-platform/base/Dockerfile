@@ -35,7 +35,9 @@ RUN apt-get -q update \
   git \
   git-lfs \
   jq \
+  lftp \
   openssh-client \
+  rsync \
   wget \
   zip \
   unzip \
@@ -88,6 +90,11 @@ RUN echo "576562626572264761624c65526f7578" > /etc/machine-id && mkdir -p /var/l
 # Used by Unity editor in "modules.json" and must not end with a slash.
 ENV UNITY_PATH="/opt/unity"
 
+# rbenv and Ruby environment variables
+ENV RBENV_ROOT="/usr/local/rbenv"
+ENV RUBY_VERSION="4.0.2"
+ENV PATH="${RBENV_ROOT}/bin:${RBENV_ROOT}/shims:${PATH}"
+
 # Environment variables for multi-platform support
 ENV ANDROID_SDK_ROOT="/opt/android-sdk"
 ENV ANDROID_HOME="${ANDROID_SDK_ROOT}"
@@ -107,5 +114,25 @@ RUN mkdir -p ${UNITY_PATH} \
   && mkdir -p ${WINEPREFIX} \
   && mkdir -p ${IOS_TOOLCHAIN_PATH} \
   && chown -R unity:unity ${UNITY_PATH} ${ANDROID_SDK_ROOT} ${JAVA_HOME} ${WINEPREFIX} ${IOS_TOOLCHAIN_PATH}
+
+# Install rbenv, Ruby, and CocoaPods for iOS build support (single layer with cleanup)
+RUN apt-get -q update \
+  && apt-get -q install -y --no-install-recommends \
+  libssl-dev \
+  libreadline-dev \
+  zlib1g-dev \
+  libffi-dev \
+  libyaml-dev \
+  && git clone --depth=1 https://github.com/rbenv/rbenv.git ${RBENV_ROOT} \
+  && git clone --depth=1 https://github.com/rbenv/ruby-build.git ${RBENV_ROOT}/plugins/ruby-build \
+  && rbenv install ${RUBY_VERSION} \
+  && rbenv global ${RUBY_VERSION} \
+  && gem install cocoapods --no-document \
+  && chmod -R a+rx ${RBENV_ROOT} \
+  # Remove Ruby build artifacts and gem cache to reduce layer size
+  && rm -rf ${RBENV_ROOT}/versions/${RUBY_VERSION}/lib/ruby/gems/*/cache/* \
+  && rm -rf /tmp/ruby-build* \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 USER unity
