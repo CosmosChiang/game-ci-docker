@@ -7,6 +7,12 @@ ARG baseImage="unityci/multi-platform-base"
 
 FROM $hubImage AS builder
 
+# Switch to root for Unity installation (builder stage requires privileged access)
+USER root
+
+# Ensure Unity Hub install path is configured for root user (builder runs as root)
+RUN unity-hub install-path --set "${UNITY_PATH}/editors/"
+
 # Install editor
 ARG version
 ARG changeSet
@@ -57,6 +63,9 @@ RUN echo "$version-$module" | grep -q -vP '^(2021.2.(?![0-4](?![0-9]))|2021.[3-9
 ###########################
 
 FROM $baseImage
+
+# Switch to root for setup operations in final stage
+USER root
 
 # Always put "Editor" and "modules.json" directly in $UNITY_PATH
 ARG version
@@ -293,3 +302,10 @@ RUN /bin/echo -e '#!/bin/bash\n\
   ;;\n\
   esac' > /usr/bin/unity-multiplatform-build \
   && chmod 755 /usr/bin/unity-multiplatform-build
+
+# Set ownership of Unity path to non-root user and copy shell configuration
+RUN chown -R unity:unity ${UNITY_PATH} \
+  && cp /root/.bashrc /home/unity/.bashrc \
+  && chown unity:unity /home/unity/.bashrc
+
+USER unity

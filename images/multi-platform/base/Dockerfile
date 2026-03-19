@@ -96,8 +96,16 @@ ENV JAVA_HOME="/opt/java"
 ENV WINEPREFIX="/opt/wine"
 ENV IOS_TOOLCHAIN_PATH="/opt/ios-toolchain"
 
-# Create directories for platform tools
-RUN mkdir -p ${ANDROID_SDK_ROOT} \
+# Create non-root user for running Unity builds
+RUN groupadd -g 1000 unity \
+  && useradd -u 1000 -g unity -m -s /bin/bash unity
+
+# Create directories for platform tools and grant ownership to non-root user
+RUN mkdir -p ${UNITY_PATH} \
+  && mkdir -p ${ANDROID_SDK_ROOT} \
   && mkdir -p ${JAVA_HOME} \
   && mkdir -p ${WINEPREFIX} \
-  && mkdir -p ${IOS_TOOLCHAIN_PATH}
+  && mkdir -p ${IOS_TOOLCHAIN_PATH} \
+  && chown -R unity:unity ${UNITY_PATH} ${ANDROID_SDK_ROOT} ${JAVA_HOME} ${WINEPREFIX} ${IOS_TOOLCHAIN_PATH}
+
+USER unity
