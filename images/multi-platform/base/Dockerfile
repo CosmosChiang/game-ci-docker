@@ -116,6 +116,8 @@ RUN mkdir -p ${UNITY_PATH} \
   && chown -R unity:unity ${UNITY_PATH} ${ANDROID_SDK_ROOT} ${JAVA_HOME} ${WINEPREFIX} ${IOS_TOOLCHAIN_PATH}
 
 # Install rbenv, Ruby, and CocoaPods for iOS build support (single layer with cleanup)
+ARG RBENV_VERSION="v1.2.0"
+ARG RUBY_BUILD_VERSION="v20240216"
 RUN apt-get -q update \
   && apt-get -q install -y --no-install-recommends \
   libssl-dev \
@@ -123,8 +125,8 @@ RUN apt-get -q update \
   zlib1g-dev \
   libffi-dev \
   libyaml-dev \
-  && git clone --depth=1 https://github.com/rbenv/rbenv.git ${RBENV_ROOT} \
-  && git clone --depth=1 https://github.com/rbenv/ruby-build.git ${RBENV_ROOT}/plugins/ruby-build \
+  && git clone --depth=1 --branch ${RBENV_VERSION} https://github.com/rbenv/rbenv.git ${RBENV_ROOT} \
+  && git clone --depth=1 --branch ${RUBY_BUILD_VERSION} https://github.com/rbenv/ruby-build.git ${RBENV_ROOT}/plugins/ruby-build \
   && rbenv install ${RUBY_VERSION} \
   && rbenv global ${RUBY_VERSION} \
   && gem install cocoapods --no-document \
