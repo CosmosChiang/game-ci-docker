@@ -118,6 +118,7 @@ RUN mkdir -p ${UNITY_PATH} \
 # Install rbenv, Ruby, and CocoaPods for iOS build support (single layer with cleanup)
 ARG RBENV_VERSION="v1.2.0"
 ARG RUBY_BUILD_VERSION="v20240216"
+ARG COCOAPODS_VERSION="1.15.2"
 RUN LIBSSL_PREINSTALLED=$(dpkg -s libssl-dev >/dev/null 2>&1 && echo yes || echo no) \
   && apt-get -q update \
   && apt-get -q install -y --no-install-recommends \
@@ -130,9 +131,9 @@ RUN LIBSSL_PREINSTALLED=$(dpkg -s libssl-dev >/dev/null 2>&1 && echo yes || echo
   && git clone --depth=1 --branch ${RUBY_BUILD_VERSION} https://github.com/rbenv/ruby-build.git ${RBENV_ROOT}/plugins/ruby-build \
   && rbenv install ${RUBY_VERSION} \
   && rbenv global ${RUBY_VERSION} \
-  && rbenv exec gem install cocoapods --no-document \
+  && rbenv exec gem install cocoapods:${COCOAPODS_VERSION} --no-document \
   && rbenv rehash \
-  && chmod -R a+rx ${RBENV_ROOT} \
+  && chmod -R a+rX ${RBENV_ROOT} \
   # Remove git metadata, Ruby build artifacts and gem cache to reduce layer size
   && rm -rf ${RBENV_ROOT}/.git \
   && rm -rf ${RBENV_ROOT}/plugins/ruby-build/.git \
