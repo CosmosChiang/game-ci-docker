@@ -1,6 +1,10 @@
 ARG ubuntuImage="ubuntu:22.04"
 FROM $ubuntuImage as base-slim
 
+# Version pins for Ruby toolchain components (ensure reproducible builds)
+ARG RBENV_VERSION="v1.2.0"
+ARG RUBY_BUILD_VERSION="v20231109"
+
 # Essential environment setup
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -69,8 +73,8 @@ RUN apt-get -q update \
     zlib1g-dev \
     libffi-dev \
     libyaml-dev \
-    && git clone --depth=1 https://github.com/rbenv/rbenv.git ${RBENV_ROOT} \
-    && git clone --depth=1 https://github.com/rbenv/ruby-build.git ${RBENV_ROOT}/plugins/ruby-build \
+    && git clone --depth=1 --branch "${RBENV_VERSION}" https://github.com/rbenv/rbenv.git ${RBENV_ROOT} \
+    && git clone --depth=1 --branch "${RUBY_BUILD_VERSION}" https://github.com/rbenv/ruby-build.git ${RBENV_ROOT}/plugins/ruby-build \
     && rbenv install ${RUBY_VERSION} \
     && rbenv global ${RUBY_VERSION} \
     && gem install cocoapods --no-document \
