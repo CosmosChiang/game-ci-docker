@@ -49,8 +49,11 @@ RUN echo 'pcm.!default {\n    type plug\n    slave.pcm "null"\n}' > /etc/asound.
     && mkdir -p /var/lib/dbus/ \
     && ln -sf /etc/machine-id /var/lib/dbus/machine-id
 
-# Create essential directories
-RUN mkdir -p ${UNITY_PATH} /opt/android-sdk /opt/wine /opt/ios-toolchain
+# Create non-root user for running Unity builds
+RUN groupadd -g 1000 unity \
+    && useradd -u 1000 -g unity -m -s /bin/bash unity \
+    && mkdir -p ${UNITY_PATH} \
+    && chown -R unity:unity ${UNITY_PATH}
 
 # Multi-stage: Platform-specific extensions
 FROM base-slim as android-extension
@@ -91,3 +94,9 @@ ENV ANDROID_SDK_ROOT="/opt/android-sdk" \
     JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64" \
     WINEPREFIX="/opt/wine" \
     IOS_TOOLCHAIN_PATH="/opt/ios-toolchain"
+
+# Create platform directories and grant ownership to non-root user
+RUN mkdir -p ${ANDROID_SDK_ROOT} ${WINEPREFIX} ${IOS_TOOLCHAIN_PATH} \
+    && chown -R unity:unity ${ANDROID_SDK_ROOT} ${WINEPREFIX} ${IOS_TOOLCHAIN_PATH}
+
+USER unity

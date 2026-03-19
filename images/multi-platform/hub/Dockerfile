@@ -2,6 +2,9 @@ ARG baseImage="unityci/multi-platform-base"
 FROM $baseImage
 ARG hubVersion="3.7.0"
 
+# Switch to root for privileged installation operations
+USER root
+
 # Hub dependencies and Unity Hub installation in single layer
 RUN apt-get -q update \
     && apt-get -q install -y --no-install-recommends --allow-downgrades zenity libgbm1 gnupg \
@@ -20,7 +23,14 @@ RUN sed -i 's/^\(.*DISPLAY=:.*XAUTHORITY=.*\)\( "\$@" \)2>&1$/\1\2/' /usr/bin/xv
 RUN echo '#!/bin/bash\nxvfb-run -a /opt/unityhub/unityhub-bin --no-sandbox --headless "$@" 2>/dev/null' > /usr/bin/unity-hub \
     && chmod +x /usr/bin/unity-hub
 
-# Configure
+# Create editors directory with proper ownership, configure Unity Hub for root
+# (builder stages run as root) and copy config to unity user for standalone use
 RUN mkdir -p "${UNITY_PATH}/editors" \
+    && chown -R unity:unity "${UNITY_PATH}" \
     && unity-hub install-path --set "${UNITY_PATH}/editors/" \
+    && mkdir -p /home/unity/.config \
+    && if [ -d /root/.config ]; then cp -r /root/.config/. /home/unity/.config/; fi \
+    && chown -R unity:unity /home/unity/.config \
     && find /tmp -mindepth 1 -delete
+
+USER unity
