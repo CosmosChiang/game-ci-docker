@@ -73,7 +73,7 @@ ARG module
 COPY --chown=unity:unity --from=builder /opt/unity/editors/$version/ "$UNITY_PATH/"
 
 # Add a file containing the version for this build
-RUN echo $version > "$UNITY_PATH/version" \
+RUN echo "$version" > "$UNITY_PATH/version" \
   && chown unity:unity "$UNITY_PATH/version"
 
 ###########################

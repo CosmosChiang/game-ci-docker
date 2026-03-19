@@ -118,7 +118,8 @@ RUN mkdir -p ${UNITY_PATH} \
 # Install rbenv, Ruby, and CocoaPods for iOS build support (single layer with cleanup)
 ARG RBENV_VERSION="v1.2.0"
 ARG RUBY_BUILD_VERSION="v20240216"
-RUN apt-get -q update \
+RUN LIBSSL_PREINSTALLED=$(dpkg -s libssl-dev >/dev/null 2>&1 && echo yes || echo no) \
+  && apt-get -q update \
   && apt-get -q install -y --no-install-recommends \
   libssl-dev \
   libreadline-dev \
@@ -137,12 +138,10 @@ RUN apt-get -q update \
   && rm -rf ${RBENV_ROOT}/plugins/ruby-build/.git \
   && rm -rf ${RBENV_ROOT}/versions/${RUBY_VERSION}/lib/ruby/gems/*/cache/* \
   && rm -rf /tmp/ruby-build* \
-  && apt-get purge -y --auto-remove \
-  libssl-dev \
-  libreadline-dev \
-  zlib1g-dev \
-  libffi-dev \
-  libyaml-dev \
+  # Remove Ruby build-time dependencies to reduce image size and attack surface
+  # Only purge libssl-dev if it was not already present (e.g. installed by iOS tools)
+  && apt-get purge -y --auto-remove libreadline-dev zlib1g-dev libffi-dev libyaml-dev \
+  && if [ "$LIBSSL_PREINSTALLED" = "no" ]; then apt-get purge -y --auto-remove libssl-dev; fi \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
