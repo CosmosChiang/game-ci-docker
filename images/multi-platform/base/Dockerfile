@@ -35,7 +35,9 @@ RUN apt-get -q update \
   git \
   git-lfs \
   jq \
+  lftp \
   openssh-client \
+  rsync \
   wget \
   zip \
   unzip \
@@ -101,3 +103,32 @@ RUN mkdir -p ${ANDROID_SDK_ROOT} \
   && mkdir -p ${JAVA_HOME} \
   && mkdir -p ${WINEPREFIX} \
   && mkdir -p ${IOS_TOOLCHAIN_PATH}
+
+# rbenv, Ruby and CocoaPods support
+ARG RBENV_VERSION="1.3.0"
+ARG RUBY_BUILD_VERSION="20260101"
+ARG RUBY_VERSION="4.0.2"
+ARG COCOAPODS_VERSION="1.16.2"
+
+ENV RBENV_ROOT="/usr/local/rbenv"
+ENV RBENV_VERSION=${RBENV_VERSION}
+ENV RUBY_VERSION=${RUBY_VERSION}
+ENV COCOAPODS_VERSION=${COCOAPODS_VERSION}
+ENV PATH="${RBENV_ROOT}/bin:${RBENV_ROOT}/shims:${PATH}"
+
+RUN apt-get -q update \
+  && apt-get -q install -y --no-install-recommends \
+  libssl-dev \
+  libreadline-dev \
+  zlib1g-dev \
+  libyaml-dev \
+  libffi-dev \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* \
+  && git clone --depth 1 --branch "v${RBENV_VERSION}" https://github.com/rbenv/rbenv.git "${RBENV_ROOT}" \
+  && git clone --depth 1 --branch "v${RUBY_BUILD_VERSION}" https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins/ruby-build" \
+  && rbenv install "${RUBY_VERSION}" \
+  && rbenv global "${RUBY_VERSION}" \
+  && gem install cocoapods -v "${COCOAPODS_VERSION}" --no-document \
+  && rbenv rehash \
+  && pod --version
