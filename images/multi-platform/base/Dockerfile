@@ -76,6 +76,7 @@ RUN apt-get -q update \
   && if [ "$INSTALL_IOS_TOOLS" = "true" ]; then \
   apt-get -q install -y --no-install-recommends \
     cmake libxml2-dev \
+    autoconf bison \
     libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev; \
   fi \
   && apt-get clean \
@@ -123,7 +124,7 @@ RUN if [ "$INSTALL_IOS_TOOLS" = "true" ]; then \
   git clone --depth 1 --branch "v${RBENV_VERSION}" https://github.com/rbenv/rbenv.git "${RBENV_ROOT}" && \
   git clone --depth 1 --branch "v${RUBY_BUILD_VERSION}" https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins/ruby-build" && \
   rm -rf "${RBENV_ROOT}/.git" "${RBENV_ROOT}/plugins/ruby-build/.git" && \
-  rbenv install "${RUBY_VERSION}" && \
+  RUBY_CONFIGURE_OPTS="--disable-zjit" rbenv install "${RUBY_VERSION}" && \
   rbenv global "${RUBY_VERSION}" && \
   gem install cocoapods -v "${COCOAPODS_VERSION}" --no-document && \
   rbenv rehash && \
