@@ -65,12 +65,6 @@ RUN apt-get -q update \
   python3 \
   python3-setuptools \
   ffmpeg \
-  # Ruby build dependencies (for rbenv/ruby-build)
-  libssl-dev \
-  libreadline-dev \
-  zlib1g-dev \
-  libyaml-dev \
-  libffi-dev \
   && if [ "$INSTALL_WINE" = "true" ]; then \
   echo "Installing Wine..." && \
   # Add Wine repository for better compatibility
@@ -80,7 +74,9 @@ RUN apt-get -q update \
   apt-get -q install -y --no-install-recommends wine wine64 winbind; \
   fi \
   && if [ "$INSTALL_IOS_TOOLS" = "true" ]; then \
-  apt-get -q install -y --no-install-recommends cmake libxml2-dev; \
+  apt-get -q install -y --no-install-recommends \
+    cmake libxml2-dev \
+    libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev; \
   fi \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
@@ -123,10 +119,15 @@ ENV RUBY_VERSION=${RUBY_VERSION}
 ENV COCOAPODS_VERSION=${COCOAPODS_VERSION}
 ENV PATH="${RBENV_ROOT}/bin:${RBENV_ROOT}/shims:${PATH}"
 
-RUN git clone --depth 1 --branch "v${RBENV_VERSION}" https://github.com/rbenv/rbenv.git "${RBENV_ROOT}" \
-  && git clone --depth 1 --branch "v${RUBY_BUILD_VERSION}" https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins/ruby-build" \
-  && rbenv install "${RUBY_VERSION}" \
-  && rbenv global "${RUBY_VERSION}" \
-  && gem install cocoapods -v "${COCOAPODS_VERSION}" --no-document \
-  && rbenv rehash \
-  && pod --version
+RUN if [ "$INSTALL_IOS_TOOLS" = "true" ]; then \
+  git clone --depth 1 --branch "v${RBENV_VERSION}" https://github.com/rbenv/rbenv.git "${RBENV_ROOT}" && \
+  git clone --depth 1 --branch "v${RUBY_BUILD_VERSION}" https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins/ruby-build" && \
+  rm -rf "${RBENV_ROOT}/.git" "${RBENV_ROOT}/plugins/ruby-build/.git" && \
+  rbenv install "${RUBY_VERSION}" && \
+  rbenv global "${RUBY_VERSION}" && \
+  gem install cocoapods -v "${COCOAPODS_VERSION}" --no-document && \
+  rbenv rehash && \
+  pod --version; \
+else \
+  echo "Skipping rbenv/Ruby/CocoaPods installation (INSTALL_IOS_TOOLS=${INSTALL_IOS_TOOLS})"; \
+fi
