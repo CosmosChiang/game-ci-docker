@@ -110,7 +110,7 @@ RUN mkdir -p ${ANDROID_SDK_ROOT} \
 # rbenv, Ruby and CocoaPods support
 ARG RBENV_VERSION="1.3.0"
 ARG RUBY_BUILD_VERSION="20260317"
-ARG RUBY_VERSION="4.0.2"
+ARG RUBY_VERSION="3.3.7"
 ARG COCOAPODS_VERSION="1.16.2"
 
 ENV RBENV_ROOT="/usr/local/rbenv"
@@ -124,7 +124,7 @@ RUN if [ "$INSTALL_IOS_TOOLS" = "true" ]; then \
   git clone --depth 1 --branch "v${RBENV_VERSION}" https://github.com/rbenv/rbenv.git "${RBENV_ROOT}" && \
   git clone --depth 1 --branch "v${RUBY_BUILD_VERSION}" https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins/ruby-build" && \
   rm -rf "${RBENV_ROOT}/.git" "${RBENV_ROOT}/plugins/ruby-build/.git" && \
-  RUBY_CONFIGURE_OPTS="--disable-zjit" rbenv install "${RUBY_VERSION}" && \
+  RUBY_CONFIGURE_OPTS="--disable-yjit" rbenv install "${RUBY_VERSION}" && \
   rbenv global "${RUBY_VERSION}" && \
   gem install cocoapods -v "${COCOAPODS_VERSION}" --no-document && \
   rbenv rehash && \
