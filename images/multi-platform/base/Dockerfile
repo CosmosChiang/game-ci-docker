@@ -65,6 +65,12 @@ RUN apt-get -q update \
   python3 \
   python3-setuptools \
   ffmpeg \
+  # Ruby build dependencies (for rbenv/ruby-build)
+  libssl-dev \
+  libreadline-dev \
+  zlib1g-dev \
+  libyaml-dev \
+  libffi-dev \
   && if [ "$INSTALL_WINE" = "true" ]; then \
   echo "Installing Wine..." && \
   # Add Wine repository for better compatibility
@@ -74,7 +80,7 @@ RUN apt-get -q update \
   apt-get -q install -y --no-install-recommends wine wine64 winbind; \
   fi \
   && if [ "$INSTALL_IOS_TOOLS" = "true" ]; then \
-  apt-get -q install -y --no-install-recommends cmake libxml2-dev libssl-dev; \
+  apt-get -q install -y --no-install-recommends cmake libxml2-dev; \
   fi \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
@@ -112,20 +118,12 @@ ARG COCOAPODS_VERSION="1.16.2"
 
 ENV RBENV_ROOT="/usr/local/rbenv"
 ENV RBENV_VERSION=${RBENV_VERSION}
+ENV RUBY_BUILD_VERSION=${RUBY_BUILD_VERSION}
 ENV RUBY_VERSION=${RUBY_VERSION}
 ENV COCOAPODS_VERSION=${COCOAPODS_VERSION}
 ENV PATH="${RBENV_ROOT}/bin:${RBENV_ROOT}/shims:${PATH}"
 
-RUN apt-get -q update \
-  && apt-get -q install -y --no-install-recommends \
-  libssl-dev \
-  libreadline-dev \
-  zlib1g-dev \
-  libyaml-dev \
-  libffi-dev \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* \
-  && git clone --depth 1 --branch "v${RBENV_VERSION}" https://github.com/rbenv/rbenv.git "${RBENV_ROOT}" \
+RUN git clone --depth 1 --branch "v${RBENV_VERSION}" https://github.com/rbenv/rbenv.git "${RBENV_ROOT}" \
   && git clone --depth 1 --branch "v${RUBY_BUILD_VERSION}" https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins/ruby-build" \
   && rbenv install "${RUBY_VERSION}" \
   && rbenv global "${RUBY_VERSION}" \
