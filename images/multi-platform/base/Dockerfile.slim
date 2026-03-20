@@ -60,11 +60,8 @@ RUN echo 'pcm.!default {\n    type plug\n    slave.pcm "null"\n}' > /etc/asound.
     && mkdir -p /var/lib/dbus/ \
     && ln -sf /etc/machine-id /var/lib/dbus/machine-id
 
-# Create non-root user for running Unity builds
-RUN groupadd -g 1000 unity \
-    && useradd -u 1000 -g unity -m -s /bin/bash unity \
-    && mkdir -p ${UNITY_PATH} \
-    && chown -R unity:unity ${UNITY_PATH}
+# Create Unity directory
+RUN mkdir -p ${UNITY_PATH}
 
 # Install rbenv, Ruby, and CocoaPods for iOS build support (single layer with cleanup)
 RUN LIBSSL_PREINSTALLED=$(dpkg -s libssl-dev >/dev/null 2>&1 && echo yes || echo no) \
@@ -134,8 +131,5 @@ ENV ANDROID_SDK_ROOT="/opt/android-sdk" \
     WINEPREFIX="/opt/wine" \
     IOS_TOOLCHAIN_PATH="/opt/ios-toolchain"
 
-# Create platform directories and grant ownership to non-root user
-RUN mkdir -p ${ANDROID_SDK_ROOT} ${WINEPREFIX} ${IOS_TOOLCHAIN_PATH} \
-    && chown -R unity:unity ${ANDROID_SDK_ROOT} ${WINEPREFIX} ${IOS_TOOLCHAIN_PATH}
-
-USER unity
+# Create platform directories
+RUN mkdir -p ${ANDROID_SDK_ROOT} ${WINEPREFIX} ${IOS_TOOLCHAIN_PATH}
