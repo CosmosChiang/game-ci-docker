@@ -21,6 +21,7 @@ Not intended for external use per se. Use the hub and editor images built from t
 - Build tools (clang, lld, cmake)
 - Audio support via ffmpeg
 - Git LFS support
+- Common transfer and sync tools (`lftp`, `rsync`, `curl`, `zip`)
 
 ## License
 

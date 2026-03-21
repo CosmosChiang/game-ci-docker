@@ -67,6 +67,8 @@ unity-multiplatform-build linux /project /build/linux
 - iOS SDK integration
 - Cross-compilation toolchain
 - Xcode tools simulation via Wine (limited)
+- Pinned Ruby toolchain via rbenv (`v1.3.2`) with Ruby `4.0.2`
+- CocoaPods available and pinned to `1.16.2`
 
 ### Windows Platform
 

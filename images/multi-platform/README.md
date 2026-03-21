@@ -76,6 +76,7 @@ docker run --rm -v $(pwd)/project:/project -v $(pwd)/build:/build \
    - Wine64 for Windows builds
    - Build tools (clang, lld, cmake)
    - Audio support (ffmpeg)
+  - Common CI utilities (`lftp`, `rsync`, `git`, `curl`, `zip`)
    - Platform directories pre-created
 
 2. **multi-platform-hub**: Unity Hub with multi-platform module support
@@ -87,6 +88,7 @@ docker run --rm -v $(pwd)/project:/project -v $(pwd)/build:/build \
    - Based on multi-platform-base and multi-platform-hub
    - Unity Editor with all platform modules
    - Platform-specific environment configuration
+  - Pinned iOS Ruby toolchain (`rbenv` `v1.3.2`, Ruby `4.0.2`, CocoaPods `1.16.2`)
    - Multi-platform build script
 
 ## Environment Variables

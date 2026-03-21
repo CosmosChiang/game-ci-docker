@@ -61,10 +61,51 @@ FROM $baseImage
 # Always put "Editor" and "modules.json" directly in $UNITY_PATH
 ARG version
 ARG module
+ARG RBENV_RELEASE="v1.3.2"
+ARG RUBY_BUILD_VERSION="v20260317"
+ARG RUBY_VERSION="4.0.2"
+ARG COCOAPODS_VERSION="1.16.2"
 COPY --from=builder /opt/unity/editors/$version/ "$UNITY_PATH/"
 
 # Add a file containing the version for this build
 RUN echo $version > "$UNITY_PATH/version"
+
+###########################
+#   iOS Ruby Toolchain    #
+###########################
+
+ENV RBENV_ROOT="/opt/rbenv"
+ENV PATH="${RBENV_ROOT}/bin:${RBENV_ROOT}/shims:${PATH}"
+
+# Install pinned rbenv, Ruby and CocoaPods for iOS workflows.
+RUN apt-get -q update \
+  && apt-get -q install -y --no-install-recommends \
+  libssl-dev \
+  libreadline-dev \
+  zlib1g-dev \
+  libyaml-dev \
+  libffi-dev \
+  libgdbm-dev \
+  libncurses5-dev \
+  libdb-dev \
+  uuid-dev \
+  autoconf \
+  bison \
+  libtool \
+  pkg-config \
+  && git clone --branch "$RBENV_RELEASE" --depth 1 https://github.com/rbenv/rbenv.git "$RBENV_ROOT" \
+  && mkdir -p "$RBENV_ROOT/plugins" \
+  && git clone --branch "$RUBY_BUILD_VERSION" --depth 1 https://github.com/rbenv/ruby-build.git "$RBENV_ROOT/plugins/ruby-build" \
+  && "$RBENV_ROOT/bin/rbenv" install "$RUBY_VERSION" \
+  && "$RBENV_ROOT/bin/rbenv" global "$RUBY_VERSION" \
+  && "$RBENV_ROOT/bin/rbenv" rehash \
+  && gem install --no-document cocoapods -v "$COCOAPODS_VERSION" \
+  && "$RBENV_ROOT/bin/rbenv" rehash \
+  && ruby --version \
+  && rbenv --version \
+  && pod --version --allow-root \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 ###########################
 #  Alias to unity-editor  #

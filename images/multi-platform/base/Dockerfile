@@ -39,6 +39,8 @@ RUN apt-get -q update \
   wget \
   zip \
   unzip \
+  lftp \
+  rsync \
   # libstdc++6 upgrade
   libstdc++6 \
   && git lfs install --system --skip-repo \
