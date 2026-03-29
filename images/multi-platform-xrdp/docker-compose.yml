@@ -1,0 +1,86 @@
+services:
+  # XRDP multi-platform base image
+  multi-platform-xrdp-base:
+    build:
+      context: ./base
+      dockerfile: Dockerfile
+      args:
+        ubuntuImage: ${UBUNTU_IMAGE:-ubuntu:22.04}
+        INSTALL_WINE: ${INSTALL_WINE:-true}
+        INSTALL_IOS_TOOLS: ${INSTALL_IOS_TOOLS:-true}
+    image: unityci/multi-platform-xrdp-base:${TAG_SUFFIX:-1.0.0}
+    container_name: unity-multiplatform-xrdp-base
+
+  # XRDP multi-platform hub image
+  multi-platform-xrdp-hub:
+    build:
+      context: ./hub
+      dockerfile: Dockerfile
+      args:
+        baseImage: unityci/multi-platform-xrdp-base:${TAG_SUFFIX:-1.0.0}
+        hubVersion: ${HUB_VERSION:-3.7.0}
+    image: unityci/multi-platform-xrdp-hub:${TAG_SUFFIX:-1.0.0}
+    container_name: unity-multiplatform-xrdp-hub
+    depends_on:
+      - multi-platform-xrdp-base
+
+  # XRDP multi-platform editor image
+  multi-platform-xrdp-editor:
+    build:
+      context: ./editor
+      dockerfile: Dockerfile
+      args:
+        hubImage: unityci/multi-platform-xrdp-hub:${TAG_SUFFIX:-1.0.0}
+        baseImage: unityci/multi-platform-xrdp-base:${TAG_SUFFIX:-1.0.0}
+        version: "${UNITY_VERSION:-2022.3.0f1}"
+        changeSet: "${UNITY_CHANGESET:-52de8fd3ce}"
+        module: "${UNITY_MODULES:-android-ios-windows}"
+    image: unityci/multi-platform-xrdp-editor:ubuntu-${UNITY_VERSION:-2022.3.0f1}-${UNITY_MODULES:-android-ios-windows}-${TAG_SUFFIX:-1.0.0}
+    container_name: unity-multiplatform-xrdp-editor
+    depends_on:
+      - multi-platform-xrdp-hub
+    ports:
+      - "${RDP_PORT:-3389}:3389"
+    volumes:
+      - "${PROJECT_PATH:-./project}:/project:ro"
+      - "${BUILD_PATH:-./build}:/build"
+      - "${CACHE_PATH:-./cache}:/cache"
+      - unity-prefs:/home/unity/.config/Unity
+      - unity-licenses:/home/unity/.local/share/unity3d
+    environment:
+      - DISPLAY=:10.0
+      - UNITY_PROJECT_PATH=/project
+      - UNITY_BUILD_PATH=/build
+      - UNITY_CACHE_PATH=/cache
+      - UNITY_USERNAME=${UNITY_USERNAME:-}
+      - UNITY_PASSWORD=${UNITY_PASSWORD:-}
+      - UNITY_SERIAL=${UNITY_SERIAL:-}
+    stdin_open: true
+    tty: true
+
+  # Development container for testing
+  unity-xrdp-dev:
+    image: unityci/multi-platform-xrdp-editor:ubuntu-${UNITY_VERSION:-2022.3.0f1}-${UNITY_MODULES:-android-ios-windows}-${TAG_SUFFIX:-1.0.0}
+    container_name: unity-multiplatform-xrdp-dev
+    depends_on:
+      - multi-platform-xrdp-editor
+    volumes:
+      - "${PROJECT_PATH:-./project}:/project"
+      - "${BUILD_PATH:-./build}:/build"
+      - "${CACHE_PATH:-./cache}:/cache"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - unity-prefs:/home/unity/.config/Unity
+      - unity-licenses:/home/unity/.local/share/unity3d
+    environment:
+      - UNITY_PROJECT_PATH=/project
+      - UNITY_BUILD_PATH=/build
+      - UNITY_CACHE_PATH=/cache
+    stdin_open: true
+    tty: true
+    command: bash
+
+volumes:
+  unity-prefs:
+    driver: local
+  unity-licenses:
+    driver: local
