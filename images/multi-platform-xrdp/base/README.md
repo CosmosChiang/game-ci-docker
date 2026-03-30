@@ -6,6 +6,9 @@ Base image used to produce XRDP-enabled multi-platform Unity images supporting W
 
 This base image includes all dependencies from the `multi-platform` base image plus remote desktop services.
 
+At container startup, if `UNITY_LICENSE` is provided, the runtime will attempt to bootstrap
+the Unity license file before XRDP login sessions begin.
+
 ## Features
 
 - Unity Editor base dependencies

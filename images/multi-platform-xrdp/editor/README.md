@@ -68,6 +68,14 @@ GUI helpers:
 - `unity-editor-gui`
 - `unity-hub-gui`
 
+### Recommended license setup for GUI
+
+Set `UNITY_LICENSE` before starting the container to skip the first-run activation prompt.
+
+- `UNITY_LICENSE` supports raw XML content or base64-encoded XML.
+- On startup, the image writes the license to `/home/unity/.local/share/unity3d/Unity/Unity_lic.ulf`.
+- If missing or invalid, Unity falls back to manual activation in the GUI.
+
 ## Platform Support
 
 ### Android Platform

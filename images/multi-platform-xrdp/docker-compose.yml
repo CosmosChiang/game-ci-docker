@@ -52,6 +52,7 @@ services:
       - UNITY_PROJECT_PATH=/project
       - UNITY_BUILD_PATH=/build
       - UNITY_CACHE_PATH=/cache
+      - UNITY_LICENSE=${UNITY_LICENSE:-}
       - UNITY_USERNAME=${UNITY_USERNAME:-}
       - UNITY_PASSWORD=${UNITY_PASSWORD:-}
       - UNITY_SERIAL=${UNITY_SERIAL:-}

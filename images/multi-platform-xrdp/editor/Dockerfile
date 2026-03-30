@@ -58,6 +58,10 @@ RUN echo "$version-$module" | grep -q -vP '^(2021.2.(?![0-4](?![0-9]))|2021.[3-9
 
 FROM $baseImage
 
+# Runtime helper scripts (license bootstrap, etc.)
+COPY scripts/ /opt/unity-ci/scripts/
+RUN chmod +x /opt/unity-ci/scripts/*.sh
+
 # Copy Unity Editor from builder
 ARG version
 ARG changeSet

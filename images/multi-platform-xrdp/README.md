@@ -74,6 +74,9 @@ docker run -d -p 3389:3389 --name unity-desktop \
 docker compose --env-file .env up -d multi-platform-xrdp-editor
 ```
 
+For GUI usage, provide `UNITY_LICENSE` in `.env` to avoid the first-run activation dialog.
+The value can be raw XML content or base64-encoded XML.
+
 This creates an editor service that exposes RDP and mounts:
 
 - `${PROJECT_PATH}` to `/project`
@@ -88,7 +91,18 @@ See `.env.template` for defaults.
 - Desktop and stack: `RDP_PORT`, `HUB_VERSION`, `UBUNTU_IMAGE`
 - Build features: `INSTALL_WINE`, `INSTALL_IOS_TOOLS`
 - Paths: `PROJECT_PATH`, `BUILD_PATH`, `CACHE_PATH`
-- Optional licensing: `UNITY_USERNAME`, `UNITY_PASSWORD`, `UNITY_SERIAL`
+- Recommended licensing: `UNITY_LICENSE`
+- Optional fallback credentials: `UNITY_USERNAME`, `UNITY_PASSWORD`, `UNITY_SERIAL`
+
+## License Bootstrap (XRDP)
+
+The editor container now bootstraps Unity licensing at startup:
+
+1. Read `UNITY_LICENSE` from environment.
+2. Write license file to `/home/unity/.local/share/unity3d/Unity/Unity_lic.ulf`.
+3. Set ownership/permissions for the `unity` desktop user.
+
+If `UNITY_LICENSE` is empty or invalid, container startup continues and Unity falls back to manual GUI activation.
 
 ## License
 

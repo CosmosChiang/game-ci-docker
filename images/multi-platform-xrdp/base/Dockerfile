@@ -164,6 +164,11 @@ RUN /bin/echo -e '#!/bin/bash\n\
   # Setup .Xauthority for unity user\n\
   su - unity -c "touch /home/unity/.Xauthority"\n\
   \n\
+  # Initialize Unity license if script is available\n\
+  if [ -x /opt/unity-ci/scripts/activate-license.sh ]; then\n\
+  /opt/unity-ci/scripts/activate-license.sh || echo "License bootstrap failed, continuing...";\n\
+  fi\n\
+  \n\
   # Generate xrdp keys if they do not exist\n\
   if [ ! -f /etc/xrdp/rsakeys.ini ]; then\n\
   xrdp-keygen xrdp /etc/xrdp/rsakeys.ini\n\
